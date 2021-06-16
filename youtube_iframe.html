@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <!-- Make sure you load your KM JS Snippet here -->
+  <title></title>
+</head>
+<body>
+<!-- The <iframe> (and video player) will replace this <div> tag. --> 
+<div id="player"></div> 
+  <script type='text/javascript'>
+    // This code loads the IFrame Player API code asynchronously.
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    
+    // This function creates an <iframe> (and YouTube player) after the API code downloads.
+    var player;
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        height: '390',
+        width: '640',
+        videoId: 'M7lc1UVf-VE',
+        events: {
+          'onReady': onPlayerReady,
+          'onStateChange': onPlayerStateChange
+        }
+      });
+    }
+
+    function onPlayerReady(event) {
+      // Add hooks for what you want to happen when the player has loaded
+    }
+  </script>
+  <script type="text/javascript"> 
+    var _kmq = _kmq || [];
+    function onPlayerStateChange(event) {
+      switch(event.data) {     
+        case YT.PlayerState.PLAYING: _kmq.push(['record', 'Played Video', {'Played Video Name':player.getVideoData().title}]);       
+        break;     
+        case YT.PlayerState.PAUSED:  _kmq.push(['record', 'Paused Video', {'Paused Video Name':player.getVideoData().title}]);       
+        break;     
+        case YT.PlayerState.ENDED: _kmq.push(['record', 'Finished Video', {'Finished Video Name':player.getVideoData().title}]);       
+        break;     
+        default:       
+        return;   
+      } 
+    } 
+  </script>
+</body>
+
+</html>
+<script type="text/javascript">
+var _kmq = _kmq || [];
+function onPlayerStateChange(event) {
+  switch(event.data) {
+    case YT.PlayerState.PLAYING:
+      _kmq.push(['record', 'Played Video', 
+                {'Played Video Name':window.top.ytPlayer.getVideoData().title}]);
+      break;
+    case YT.PlayerState.PAUSED:
+      _kmq.push(['record', 'Paused Video', 
+                {'Paused Video Name':window.top.ytPlayer.getVideoData().title}]);
+      break;
+    case YT.PlayerState.ENDED:
+      _kmq.push(['record', 'Finished Video', 
+                {'Finished Video Name':window.top.ytPlayer.getVideoData().title}]);
+      break;
+    default:
+      return;
+  }
+}
+</script>

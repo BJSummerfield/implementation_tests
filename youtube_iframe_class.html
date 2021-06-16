@@ -1,0 +1,119 @@
+<script type="text/javascript">
+  class CallbackQue {
+    constructor() {
+      this._on = {
+        add: [],
+      }
+    }
+    trigger (event, context) {
+      this._on[event].forEach(callback => callback(context))
+    }
+    on (event, callback) {
+      this._on[event].push(callback)
+    }
+    add (context) {
+      this.trigger('add', context)
+    }
+  }
+
+  window.top.cbq = new CallbackQue()
+
+  window.top.cbq.on('add', player => {
+    player.addEventListener('onStateChange', 'ytPlayerTracking')
+    ytTrackPageUnload()
+  })
+
+  const PLAYING = 1
+  const PAUSED = 2
+
+  const BUCKETS = {
+    '60 mins +': 3600,
+    '31-60 mins': 1860,
+    '16-30 mins': 960,
+    '4-15 mins': 240,
+    '1-3 mins': 60,
+    '<1 min' : 0
+  }
+
+  // BEGIN START TIMES INTERFACE
+
+  // maps video id => startTime
+  const YT_START_TIMES = {}
+
+  const setStartTime = (playerId, startTime = Date.now()) => {
+    YT_START_TIMES[playerId] = startTime
+  }
+
+  const getStartTime = playerId => {
+    return YT_START_TIMES[playerId]
+  }
+
+  const isPlaying = playerId => {
+    return !!getStartTime(playerId)
+  }
+
+  const deleteStartTime = playerId => {
+    delete YT_START_TIMES[playerId]
+  }
+
+  const getAllPlaying = () => {
+    return Object.keys(YT_START_TIMES)
+  }
+
+  // END START TIMES INTERFACE
+
+  const track = (event, properties = {}) => {
+    if (window.top._kmq && event) {
+      window.top._kmq.push(['record', event, properties])
+    }
+  }
+
+  const ytTrackPageUnload = title => {
+    const agent = navigator.userAgent
+    const isIos = agent.match(/iPad/i) || agent.match(/iPhone/i)
+    const eventName = isIos ? "pagehide" : "beforeunload"
+
+    window.addEventListener(eventName, e => {
+      getAllPlaying().forEach(ytPlayerStopped)
+    })
+  }
+
+  window.top.ytPlayerTracking = event => {
+    const { title } =  event.target.getVideoData()
+
+    switch (event.data) {
+      case PLAYING: return ytPlayerStarted(title)
+      case PAUSED: return ytPlayerStopped(title)
+    }
+  }
+
+  const ytPlayerStarted = title => {
+    setStartTime(title) // TODO: Use ID
+
+    track('Played Video', {
+      'Played Video Name': title
+    })
+  }
+
+  const ytPlayerStopped = title => {
+    if (isPlaying(title)) {
+      const timeWatched = (Date.now() - getStartTime(title))/1000
+
+      track('Halted Video', {
+        'Halted Video Name': title,
+        'Time Watched': timeWatched,
+        'Bucket Watched': ytPlayerBuckets(timeWatched)
+      })
+      deleteStartTime(title)
+    }
+  }
+
+  const ytPlayerBuckets = timeWatched => {
+    for (let bucket in BUCKETS) {
+      if (timeWatched >= BUCKETS[bucket]) {
+        return bucket
+      }
+    }
+  }
+
+</script>
